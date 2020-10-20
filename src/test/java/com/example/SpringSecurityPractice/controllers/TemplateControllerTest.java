@@ -26,8 +26,11 @@ import org.springframework.web.context.WebApplicationContext;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
@@ -67,23 +70,29 @@ public class TemplateControllerTest {
                         StringContains.containsString("Please")));
     }
 
+    //@WithMockUser(username = "Mikhalych", password = "password", roles = {"STUDENT"})
     @Test
     public void studentApiTest() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/students/1")
                 .with(user("roman").password("password").roles("STUDENT")))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(authenticated());
     }
 
     @Test
     @Sql(value={"/queries/create_user.sql"}, executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     public void testLoginPage() throws Exception {
-        mockMvc.perform(formLogin().user("mikhalych").password("pass"))
-                .andExpect(status().is3xxRedirection());
+        mockMvc.perform(formLogin().user("dru").password("password"))
+                 .andExpect(status().is3xxRedirection())
+                 .andExpect(authenticated())
+                 .andExpect(redirectedUrl("/courses"));
     }
 
     @Test
-    public void badCredentials() throws Exception {
-        this.mockMvc.perform(post("/login").with(user("mikhalych").password("123")))
-                .andExpect(status().isForbidden());
+    @Sql(value="/queries/create_user.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    public void invalidAuthentication() throws Exception {
+        mockMvc.perform(formLogin().user("dru").password("pass"))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
     }
 }
