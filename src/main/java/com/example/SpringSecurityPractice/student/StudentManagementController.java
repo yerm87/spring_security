@@ -1,5 +1,8 @@
 package com.example.SpringSecurityPractice.student;
 
+import com.example.SpringSecurityPractice.models.User;
+import com.example.SpringSecurityPractice.repo.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +12,10 @@ import java.util.List;
 @RestController
 @RequestMapping(path="/management/api/students")
 public class StudentManagementController {
+
+    @Autowired
+    private UserRepository repo;
+
     private static List<Student> students = Arrays.asList(
             new Student(1, "James"),
             new Student(2, "Maria"),
@@ -20,6 +27,7 @@ public class StudentManagementController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ADMIN_TRAINEE')")
     public List<Student> getAllStudents(){
+        List<User> users = repo.findAll();
         System.out.println("getAllStudents");
         return students;
     }
